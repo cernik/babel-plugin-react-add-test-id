@@ -67,11 +67,17 @@ export default function(
             // if has a key get its value
             const keyValue = getKey(path);
 
+            if (path.parent.childrenCount) {
+              path.parent.counter = path.parent.counter + 1;
+            }
+            const counter = mode === "full" ? path.parent.counter : 0;
+
             const concatComponentName = concatComponentsName(
               path.node.componentName,
               isIgnoredElement ? "" : componentName,
               delimiter,
-              keyValue
+              keyValue,
+              counter
             );
 
             isRootElement = false;
@@ -97,14 +103,15 @@ const concatComponentsName = (
   parent = "",
   current = "",
   delimiter = "-",
-  keyValue = ""
+  keyValue = "",
+  suffix = ""
 ) => {
   const componentsName =
     parent && current ? `${parent}${delimiter}${current}` : parent || current;
-
-  return keyValue
+  const ret = keyValue
     ? `\`${componentsName}${delimiter}\${${keyValue}}\``
     : componentsName;
+  return suffix ? `${ret}${delimiter}${suffix}` : ret;
 };
 
 const passDownComponentName = (path, componentName, mode, delimiter) => {
@@ -127,6 +134,11 @@ const passDownComponentName = (path, componentName, mode, delimiter) => {
           componentName,
           delimiter
         );
+
+        path.node.childrenCount = (path.node.children || []).filter(
+          ({ type }) => type === "JSXElement"
+        ).length;
+        path.parent.counter = 0;
       }
 
       isRootElement = false;
